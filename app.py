@@ -6,20 +6,15 @@ from bs4 import BeautifulSoup
 app = Flask(__name__)
 
 @app.route("/")
-def hello_word():
-	return "<p>Ciao!</p>"
+def news():
+ headlines = scrape_news()
+ return render_template("news.html", headlines=headlines)
 
 
 @app.route('/hello/')
 @app.route('/hello/<name>')
 def hello(name=None):
     return render_template('index.html', person=name)
-
-@app.route("/news")
-def news():
- headlines = scrape_news()
- return render_template("news.html", headlines=headlines)
-
 
 def scrape_news():
  url = "https://news.ycombinator.com"
