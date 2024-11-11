@@ -1,0 +1,15 @@
+brotlipy
+conda-content-trust
+conda-libmamba-solver
+flask
+flask-misaka
+fqdn
+isoduration
+jupyter
+markdown
+pip-chill
+pip-tools
+pysocks
+ruamel.yaml
+uri-template
+webcolors
