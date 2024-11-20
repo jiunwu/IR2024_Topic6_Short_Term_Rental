@@ -11,4 +11,5 @@ Additional  features are  categorized into two groups: complex and simple featur
 
 # Simple Features
 - Results presentation: results should be presented in a tabular format, so that many results could be seen at the same time. Each table cell should contain appropriate information for your project.
-- Filtering:  in  addition  to  being  able  to  search  by  title,  an  user  should  be  able  to  filter  the results based on at least 3 relevant attributes for your project.Results Snippets: present result snippets of each retrieved result (maximum 2-3 lines) in a kind of “Google style”, with query terms highlighted.
+- Filtering:  in  addition  to  being  able  to  search  by  title,  an  user  should  be  able  to  filter  the results based on at least 3 relevant attributes for your project.
+- Results Snippets: present result snippets of each retrieved result (maximum 2-3 lines) in a kind of “Google style”, with query terms highlighted.

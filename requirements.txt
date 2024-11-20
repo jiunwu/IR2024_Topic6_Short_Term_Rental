@@ -11,4 +11,4 @@ pysocks
 uri-template
 webcolors
 beautifulsoup4
-
+requests

@@ -1,4 +1,4 @@
-#!/home/jiun/Documents/IR2024/IR2024/.venv/bin/python3
+#!/Users/jiun/Documents/2024/InformationRetrieval/project/.venv/bin/python3
 
 import sys
 from os import path
