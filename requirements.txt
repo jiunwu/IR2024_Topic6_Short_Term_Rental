@@ -12,3 +12,5 @@ uri-template
 webcolors
 beautifulsoup4
 requests
+selenium
+webdriver_manager

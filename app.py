@@ -23,10 +23,6 @@ def index_selenium():
     listings = scrape_airbnb_selenium(search_query)
     return render_template("index.html", listings=listings)
 
-@app.route('/hello/', methods=["GET"])
-def news():
-    headlines = scrape_news()
-    return render_template("news.html", headlines=headlines)
 
 def scrape_airbnb(search_query=None, price=None, location=None):
     url = "https://www.holidaylettings.co.uk/villas-with-pools/hom_sleeps_max.2/"
@@ -121,22 +117,6 @@ def scrape_airbnb_selenium(search_query=None, price=None, location=None):
             })
 
     return listings
-
-def scrape_news():
-    url = "https://news.ycombinator.com"
-    response = requests.get(url)
-
-    if response.status_code != 200:
-        print("Failed to retrieve the webpage.")
-        return []
-    
-    soup = BeautifulSoup(response.content, "html.parser")
-    headlines = []
-    
-    for headline in soup.find_all("a", class_="storylink"):
-        headlines.append(headline.text)
-    
-    return headlines
 
 if __name__ == "__main__":
     app.run(debug=True)
