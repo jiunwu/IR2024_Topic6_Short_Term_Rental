@@ -8,8 +8,16 @@ from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import base64 
+import sqlite3 
 
 app = Flask(__name__)
+
+def create_database():
+    conn = sqlite3.connect('rentals.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS rentals (id INTEGER PRIMARY KEY, rental TEXT)''')
+    conn.commit()
+    conn.close()
 
 @app.route("/", methods=["GET"])
 def index():
