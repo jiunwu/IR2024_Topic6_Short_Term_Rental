@@ -15,9 +15,23 @@ app = Flask(__name__)
 def create_database():
     conn = sqlite3.connect('rentals.db')
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS rentals (id INTEGER PRIMARY KEY, rental TEXT)''')
+    #c.execute('''CREATE TABLE IF NOT EXISTS rentals (id INTEGER PRIMARY KEY, rental TEXT)''')
+    create_table_query = """
+        CREATE TABLE IF NOT EXISTS rentals (
+            id INTEGER PRIMARY KEY,
+            rental_name TEXT NOT NULL,
+            price REAL NOT NULL,
+            location TEXT NOT NULL,
+            guest_capacity INTEGER NOT NULL
+        );
+        """
+    c.execute(create_table_query)
     conn.commit()
     conn.close()
+    
+# ToDo1: initialize the database, fetch data from 3 different sources, saving them into the database
+# ToDo2: apply PyTerrier and indexing the database.
+# ToDo3: provide interface to query for "/" and return the result from PyTerrier
 
 @app.route("/", methods=["GET"])
 def index():
@@ -25,6 +39,7 @@ def index():
     listings = scrape_airbnb(search_query)
     return render_template("index.html", listings=listings)
 
+# this /2 will call selenium to fetch AirBnB
 @app.route("/2", methods=["GET"])
 def index_selenium():
     search_query = request.args.get("search", "")
@@ -58,6 +73,9 @@ def scrape_airbnb(search_query=None, price=None, location=None):
 
         # Text in the element
         title = element.get_text(strip=True) if element else "No title"
+        
+        # Todo: Location in the element
+        # Todo: Price in the element
 
         if title in seen:
             continue
@@ -67,6 +85,7 @@ def scrape_airbnb(search_query=None, price=None, location=None):
         matches_query = (search_query is None or search_query.lower() in title.lower())
         matches_price = price is None  
         matches_location = location is None 
+        matches_geust = 2
 
         if matches_query and matches_price and matches_location:
             listings.append({
