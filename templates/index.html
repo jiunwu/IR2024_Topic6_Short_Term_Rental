@@ -28,6 +28,20 @@
         <button type="submit">Search</button>
     </form>
 
+    <!-- Filters Summary -->
+    <div class="filters-summary">
+        <p>
+            Showing results for 
+            <strong>"{{ request.args.get('search', 'All Listings') }}"</strong>
+            {% if request.args.get('price') %} 
+                under <strong>{{ request.args.get('price') }}</strong> price 
+            {% endif %}
+            {% if request.args.get('location') %}
+                in <strong>{{ request.args.get('location') }}</strong>
+            {% endif %}.
+        </p>
+    </div>
+
     <!-- Displaying the Airbnb Listings -->
     <div class="bnb-grid">
         {% for listing in listings %}
@@ -38,7 +52,7 @@
                 <p>Location: {{ listing.location }}</p>
             </a>
         {% else %}
-            <p>No results found for "{{ search_query }}"</p>
+            <p>No results found for "{{ request.args.get('search', 'All Listings') }}"</p>
         {% endfor %}
     </div>
 

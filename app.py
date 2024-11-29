@@ -1,3 +1,4 @@
+import html
 from flask import Flask, render_template, request
 import requests
 from bs4 import BeautifulSoup
@@ -57,47 +58,47 @@ def scrape_airbnb(search_query=None, price=None, location=None):
 
     if response.status_code != 200:
         print("Failed", response.status_code)
-        return [] 
+        return []
 
     soup = BeautifulSoup(response.content, "html.parser")
 
-    listings = []
-    seen = set()
+    # Dictionary to store unique listings by title
+    listings_map = {}
 
-    # search elements in the html
+    # Search elements in the HTML
     elements = soup.find_all("a", attrs={"data-param": True})
     for element in elements:
-        # Decode
+        # Decode the URL
         data_param = element.get("data-param", "")
         decoded_url = base64.b64decode(data_param).decode("utf-8") if data_param else "No URL"
 
-        # Text in the element
+        # Extract text and details
         title = element.get_text(strip=True) if element else "No title"
-        
-        # Todo: Location in the element
-        # Todo: Price in the element
+        listing_price = element.find_next("span", class_="price").get_text(strip=True) if element.find_next("span", "price") else "Unknown"
+        listing_location = element.find_next("span", class_="location").get_text(strip=True) if element.find_next("span", "location") else "Unknown"
 
-        if title in seen:
-            continue
-        seen.add(title)
-
-        # Filter (TODO: implement)
-        matches_query = (search_query is None or search_query.lower() in title.lower())
-        matches_price = price is None  
-        matches_location = location is None 
-        matches_geust = 2
-
-        if matches_query and matches_price and matches_location:
-            listings.append({
+        # Add to dictionary if unique
+        if title not in listings_map:
+            listings_map[title] = {
                 "title": title,
                 "url": decoded_url,
-            })
+                "price": listing_price,
+                "location": listing_location,
+                "image": "/static/images/placeholder.jpg"
+            }
 
-    # Sort listings
+    # Filter and sort the results
+    filtered_listings = [
+        details for details in listings_map.values()
+        if (search_query is None or search_query.lower() in details["title"].lower()) or
+           (price is None or price.lower() in details["price"].lower()) or
+           (location is None or location.lower() in details["location"].lower())
+    ]
+
     if search_query:
-        listings.sort(key=lambda x: (search_query.lower() not in x['title'].lower(), x['title']))
+        filtered_listings.sort(key=lambda x: (search_query.lower() not in x['title'].lower(), x['title']))
 
-    return listings
+    return filtered_listings
 
 def scrape_airbnb_selenium(search_query=None, price=None, location=None):
    
