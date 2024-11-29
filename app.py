@@ -10,6 +10,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 import base64 
 import sqlite3 
+import base64
+import requests
 
 app = Flask(__name__)
 
@@ -55,50 +57,65 @@ def scrape_airbnb(search_query=None, price=None, location=None):
     }
 
     response = requests.get(url, headers=headers)
-
     if response.status_code != 200:
         print("Failed", response.status_code)
         return []
 
     soup = BeautifulSoup(response.content, "html.parser")
 
-    # Dictionary to store unique listings by title
-    listings_map = {}
+    listings = []
+    seen_titles = set()
 
     # Search elements in the HTML
     elements = soup.find_all("a", attrs={"data-param": True})
     for element in elements:
+        # Skip irrelevant entries based on attributes
+        if any(
+            keyword in element.attrs.get("data-automation", "").lower()
+            for keyword in ["privacy", "login", "cookies", "terms"]
+        ):
+            continue  # Exclude cookies and privacy links
+        if "class" in element.attrs:
+            classes = element.attrs["class"]
+            if any(cls in classes for cls in ["dropdown-item", "nav-link"]):  # Exclude unwanted classes
+                continue
+
         # Decode the URL
         data_param = element.get("data-param", "")
         decoded_url = base64.b64decode(data_param).decode("utf-8") if data_param else "No URL"
 
-        # Extract text and details
+        # Extract title and details
         title = element.get_text(strip=True) if element else "No title"
-        listing_price = element.find_next("span", class_="price").get_text(strip=True) if element.find_next("span", "price") else "Unknown"
-        listing_location = element.find_next("span", class_="location").get_text(strip=True) if element.find_next("span", "location") else "Unknown"
+        listing_price = element.find_next("span", class_="price").get_text(strip=True) if element.find_next("span", class_="price") else "Unknown"
+        listing_location = element.find_next("span", class_="location").get_text(strip=True) if element.find_next("span", class_="location") else "Unknown"
 
-        # Add to dictionary if unique
-        if title not in listings_map:
-            listings_map[title] = {
+        # Ensure unique titles
+        if title in seen_titles:
+            continue
+        seen_titles.add(title)
+
+        print(element.attrs)
+
+
+        # Filter based on query, price, and location
+        matches_query = search_query is None or search_query.lower() in title.lower()
+        matches_price = price is None or price.lower() in listing_price.lower()
+        matches_location = location is None or location.lower() in listing_location.lower()
+
+        if matches_query or matches_price or matches_location:
+            listings.append({
                 "title": title,
                 "url": decoded_url,
                 "price": listing_price,
                 "location": listing_location,
-                "image": "/static/images/placeholder.jpg"
-            }
+                "image": "/static/images/placeholder.jpg"  # Placeholder for now
+            })
 
-    # Filter and sort the results
-    filtered_listings = [
-        details for details in listings_map.values()
-        if (search_query is None or search_query.lower() in details["title"].lower()) or
-           (price is None or price.lower() in details["price"].lower()) or
-           (location is None or location.lower() in details["location"].lower())
-    ]
-
+    # Sort listings
     if search_query:
-        filtered_listings.sort(key=lambda x: (search_query.lower() not in x['title'].lower(), x['title']))
+        listings.sort(key=lambda x: (search_query.lower() not in x['title'].lower(), x['title']))
 
-    return filtered_listings
+    return listings
 
 def scrape_airbnb_selenium(search_query=None, price=None, location=None):
    
