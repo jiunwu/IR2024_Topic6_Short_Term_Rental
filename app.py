@@ -107,7 +107,6 @@ def scrape_airbnb(search_query=None, price=None, location=None):
         matches_geust = 2
 
         #placeholder
-        decoded_url = "google.com"
         if matches_query and matches_price and matches_location:
             listings.append({
                 "title": title,
