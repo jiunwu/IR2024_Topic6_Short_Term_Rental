@@ -1,17 +1,21 @@
 from flask import Flask, render_template, request
+import requests
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.options import Options
 import time
-import sqlite3
+import base64 
+import sqlite3 
 
 app = Flask(__name__)
 
 def create_database():
     conn = sqlite3.connect('rentals.db')
     c = conn.cursor()
+    #c.execute('''CREATE TABLE IF NOT EXISTS rentals (id INTEGER PRIMARY KEY, rental TEXT)''')
     create_table_query = """
         CREATE TABLE IF NOT EXISTS rentals (
             id INTEGER PRIMARY KEY,
@@ -24,71 +28,147 @@ def create_database():
     c.execute(create_table_query)
     conn.commit()
     conn.close()
+    
+# ToDo1: initialize the database, fetch data from 3 different sources, saving them into the database
+# ToDo2: apply PyTerrier and indexing the database.
+# ToDo3: provide interface to query for "/" and return the result from PyTerrier
 
-# Unified route using Selenium
 @app.route("/", methods=["GET"])
 def index():
+    search_query = request.args.get("search", "")
+    listings = scrape_airbnb(search_query)
+    return render_template("index.html", listings=listings)
+
+# this /2 will call selenium to fetch AirBnB
+@app.route("/2", methods=["GET"])
+def index_selenium():
     search_query = request.args.get("search", "")
     listings = scrape_airbnb_selenium(search_query)
     return render_template("index.html", listings=listings)
 
-def scrape_airbnb_selenium(search_query=None, price=None, location=None):
-    # Set up Selenium WebDriver with headless mode
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Enable headless mode
-    chrome_options.add_argument("--disable-gpu")  # Disable GPU acceleration (useful for headless mode)
-    chrome_options.add_argument("--no-sandbox")  # Necessary for some environments
-    chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid issues with /dev/shm in headless mode
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-    driver.get("https://www.airbnb.co.uk/")
-    
-    # Allow time for the page to load
-    time.sleep(5)
-    
+def scrape_airbnb(search_query=None, price=None, location=None):
+    url = "https://www.holidaylettings.co.uk/villas-with-pools/hom_sleeps_max.2/"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code != 200:
+        print("Failed", response.status_code)
+        return [] 
+
+    soup = BeautifulSoup(response.content, "html.parser")
+
     listings = []
     seen = set()
-    
-    try:
-        # Locate and process elements containing listing information
-        elements = driver.find_elements(By.CLASS_NAME, "t1jojoys")  # Adjust this selector as per the actual Airbnb page structure
-        for element in elements:
-            title = element.text.strip() if element else "No title"
-            
-            # Skip duplicate titles
-            if title in seen:
-                continue
-            seen.add(title)
 
-            # Retrieve price
-            try:
-                price_element = element.find_element(By.XPATH, ".//following-sibling::span[contains(@class, 'price')]")
-                price_text = price_element.text.strip() if price_element else "No price"
-            except Exception:
-                price_text = "No price"
+    # search elements in the html
+    elements = soup.find_all("a", attrs={"data-param": True})
+    irrelevant_titles = {"privacy policy", "Owners / Managers", "privacy and cookies statement", "terms", "common questions"}
+    elements = [el for el in elements if el.get_text(strip=True).lower() not in irrelevant_titles]
 
-            # Retrieve location
-            try:
-                location_element = element.find_element(By.XPATH, ".//following-sibling::div[contains(@class, 'location-class')]")
-                location_text = location_element.text.strip() if location_element else "No location"
-            except Exception:
-                location_text = "No location"
-            
-            # Apply filters (if any)
-            matches_query = (search_query is None or search_query.lower() in title.lower())
-            matches_price = (price is None or price in price_text)
-            matches_location = (location is None or location.lower() in location_text.lower())
-            
-            if matches_query and matches_price and matches_location:
-                listings.append({
-                    "title": title,
-                    "price": price_text,
-                    "location": location_text,
-                })
-    finally:
-        # Close the browser
-        driver.quit()
-    
+    for element in elements:
+        # Decode
+        title = element.get_text(strip=True)
+        if "owners" in title.lower():
+            continue
+        data_param = element.get("data-param", "")
+        decoded_url = base64.b64decode(data_param).decode("utf-8") if data_param else "No URL"
+
+        # Text in the element
+        title = element.get_text(strip=True) if element else "No title"
+        
+        # Todo: Location in the element
+        # Todo: Price in the element
+
+        if title in seen:
+            continue
+        seen.add(title)
+
+        price_tag = element.find_next("span", class_="fs-4")
+        price_text = price_tag.get_text(strip=True) if price_tag else "No price"
+
+        location_tag = element.find_next("p", class_="text-gray-700") 
+        location_text = location_tag.get_text(strip=True) if location_tag else "No location"
+
+        image_tag = element.find_next("span", class_="pc-photos-list")
+        if image_tag and 'data-imgs' in image_tag.attrs:
+            data_imgs = image_tag['data-imgs']
+            first_image = data_imgs.split('|')[0]  # Get the first URL from the list
+            image_url = "https:" + first_image 
+
+
+        # Filter (TODO: implement)
+        matches_query = (search_query is None or search_query.lower() in title.lower())
+        matches_price = price is None  
+        matches_location = location is None 
+        matches_geust = 2
+
+        #placeholder
+        decoded_url = "google.com"
+        if matches_query and matches_price and matches_location:
+            listings.append({
+                "title": title,
+                "price": price_text,
+                "location": location_text,
+                "url": decoded_url,
+                "image": image_url
+            })
+
+    # Sort listings
+    if search_query:
+        listings.sort(key=lambda x: (search_query.lower() not in x['title'].lower(), x['title']))
+
+    return listings
+
+
+
+def scrape_airbnb_selenium(search_query=None, price=None, location=None):
+   
+    # Set up Selenium WebDriver (requires Chrome and ChromeDriver installed)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    driver.get()
+
+    # time to load
+    time.sleep(5)
+
+    page_source = driver.page_source
+    driver.quit()
+
+    soup = BeautifulSoup(page_source, "html.parser")
+
+    listings = []
+    seen = set()
+
+    #  inside divs with class 't1jojoys' (adjust if necessary)
+    elements = soup.find_all("div", class_="t1jojoys")
+    for element in elements:
+        title = element.get_text(strip=True) if element else "No title"
+        
+        if title in seen:
+            continue
+        seen.add(title)
+
+        # filters TODO: latter implement
+        price_tag = element.find_next("span", class_="price")
+        price_text = price_tag.get_text(strip=True) if price_tag else "No price"
+        
+        location_tag = element.find_next("div", class_="location-class") 
+        location_text = location_tag.get_text(strip=True) if location_tag else "No location"
+
+        matches_query = (search_query is None or search_query.lower() in title.lower())
+        matches_price = (price is None or price in price_text)
+        matches_location = (location is None or location.lower() in location_text.lower())
+
+        if matches_query and matches_price and matches_location:
+            listings.append({
+                "title": title,
+                "price": price_text,
+                "location": location_text,
+            })
+
     return listings
 
 if __name__ == "__main__":

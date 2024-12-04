@@ -31,11 +31,13 @@
     <!-- Displaying the Airbnb Listings -->
     <div class="bnb-grid">
         {% for listing in listings %}
-            <a href="{{ listing.link }}" class="bnb-card">
-                <img src="{{ listing.image }}" alt="{{ listing.title }}" class="bnb-image">
-                <h2>{{ listing.title }}</h2>
-                <p>Price: {{ listing.price }}</p>
-                <p>Location: {{ listing.location }}</p>
+            <a href="{{ listing.url }}" class="bnb-card">
+                <div class="bnb-content">
+                    <img src="{{ listing.image }}" alt="{{ listing.title }}" class="bnb-image">
+                    <h2>{{ listing.title }}</h2>
+                    <p>Price: {{ listing.price }}</p>
+                    <p>Location: {{ listing.location }}</p>
+                </div>
             </a>
         {% else %}
             <p>No results found for "{{ search_query }}"</p>
