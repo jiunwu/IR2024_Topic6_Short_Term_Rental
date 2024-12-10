@@ -13,18 +13,6 @@
     <!-- Search and Filter Form -->
     <form method="get" action="/">
         <input type="text" name="search" placeholder="Search by title" value="{{ request.args.get('search', '') }}">
-        <select name="price">
-            <option value="">Price</option>
-            <option value="low" {% if request.args.get('price') == 'low' %}selected{% endif %}>Low</option>
-            <option value="medium" {% if request.args.get('price') == 'medium' %}selected{% endif %}>Medium</option>
-            <option value="high" {% if request.args.get('price') == 'high' %}selected{% endif %}>High</option>
-        </select>
-        <select name="location">
-            <option value="">Location</option>
-            <option value="London" {% if request.args.get('location') == 'London' %}selected{% endif %}>London</option>
-            <option value="Edinburgh" {% if request.args.get('location') == 'Edinburgh' %}selected{% endif %}>Edinburgh</option>
-            <!-- Add more locations -->
-        </select>
         <button type="submit">Search</button>
     </form>
 
