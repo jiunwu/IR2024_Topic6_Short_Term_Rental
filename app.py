@@ -15,8 +15,13 @@ import time
 import base64
 import sqlite3
 import re
+import pyterrier as pt
 
 app = Flask(__name__)
+
+# Initialize PyTerrier
+if not pt.started():
+    pt.init()
 
 def get_listings():
     conn = sqlite3.connect('listings.db')
@@ -42,10 +47,36 @@ def api_listings():
     return jsonify(listings)
 
 
-@app.route('/search', methods=['POST'])
+@app.route('/search', methods=['GET', 'POST'])
 def search():
     search_query = request.form.get('search', '')
-    listings = scrape_airbnb(search_query)
+    
+    # Load dataset from SQLite
+    conn = sqlite3.connect('listings.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT rowid, title, price, location, url, image FROM listings")
+    rows = cursor.fetchall()
+    conn.close()
+
+    # Prepare the dataset for PyTerrier
+    docs = [{'docno': str(row[0]), 'text': f"{row[1]} {row[2]} {row[3]} {row[4]} {row[5]}"} for row in rows]
+    indexer = pt.IterDictIndexer('./index')
+    indexref = indexer.index(docs)
+
+    # Initialize the PyTerrier pipeline
+    pipeline = pt.BatchRetrieve(indexref, wmodel="BM25")
+
+    # Perform the search
+    results = pipeline.search(search_query)
+
+    # Fetch the results from the database
+    result_ids = [int(docno) for docno in results['docno']]
+    conn = sqlite3.connect('listings.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT title, price, location, url, image FROM listings WHERE rowid IN ({})".format(','.join('?' * len(result_ids))), result_ids)
+    listings = cursor.fetchall()
+    conn.close()
+
     return render_template('index.html', listings=listings)
 
 def scrape_airbnb(search_query=None, price=None, location=None):
