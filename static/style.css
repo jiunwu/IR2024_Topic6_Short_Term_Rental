@@ -1,63 +1,67 @@
 body {
     font-family: Arial, sans-serif;
-    margin: 20px;
+    line-height: 1.6;
+    margin: 0;
     padding: 0;
-    background-color: #f4f4f4;
-    color: #333;
 }
 
 h1 {
     text-align: center;
+    margin-top: 20px;
 }
 
 form {
-    text-align: center;
-    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px;
 }
 
-input {
-    margin: 5px;
+form input, form select, form button {
     padding: 10px;
     font-size: 16px;
 }
 
-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.listings {
-    display: flex;
-    flex-wrap: wrap;
+.bnb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
-    justify-content: center;
-}
-
-.listing {
-    background: white;
-    border: 1px solid #ccc;
     padding: 20px;
-    border-radius: 8px;
-    width: 300px;
 }
 
-.listing h2 {
-    font-size: 20px;
-    margin: 0 0 10px;
-}
-
-.listing p {
-    margin: 5px 0;
-}
-
-.listing a {
-    display: inline-block;
-    margin-top: 10px;
-    color: blue;
+.bnb-card {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 0;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: #f9f9f9;
+    transition: transform 0.2s, box-shadow 0.2s;
     text-decoration: none;
+    color: inherit;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-.listing a:hover {
-    text-decoration: underline;
+.bnb-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.bnb-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.bnb-card h2 {
+    margin: 10px 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.bnb-card p {
+    margin: 5px 0;
+    color: #555;
 }
