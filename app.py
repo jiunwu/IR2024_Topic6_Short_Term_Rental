@@ -16,14 +16,6 @@ import base64
 import sqlite3
 app = Flask(__name__)
 
-def create_database():
-    conn = sqlite3.connect('rentals.db')
-    c = conn.cursor()
-    create_table_query = '\n        CREATE TABLE IF NOT EXISTS rentals (\n            id INTEGER PRIMARY KEY,\n            rental_name TEXT NOT NULL,\n            price REAL NOT NULL,\n            location TEXT NOT NULL,\n            guest_capacity INTEGER NOT NULL\n        );\n        '
-    c.execute(create_table_query)
-    conn.commit()
-    conn.close()
-
 @app.route('/', methods=['GET'])
 def index():
     search_query = request.args.get('search', '')
@@ -46,6 +38,22 @@ def scrape_airbnb(search_query=None, price=None, location=None):
     listings = []
     seen = set()
 
+    # Connect to SQLite3 database (or create it if it doesn't exist)
+    conn = sqlite3.connect('listings.db')
+    cursor = conn.cursor()
+
+    # Create table if it doesn't exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS listings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            price TEXT,
+            location TEXT,
+            url TEXT,
+            image TEXT
+        )
+    ''')
+    
     elements = soup.find_all('a', attrs={'data-param': True})
     #elements = soup.find_all('div', class_='c82435a4b8 a178069f51 a6ae3c2b40 a18aeea94d d794b7a0f7 f53e278e95 c6710787a4')  # Adjust this to match the new website structure.
     #elements = soup.find_all('a', class_='block')
@@ -105,6 +113,16 @@ def scrape_airbnb(search_query=None, price=None, location=None):
             listings.append({'title': title, 'price': price_text, 'location': location_text, 'url': decoded_url, 'image': image_url})
     if search_query:
         listings.sort(key=lambda x: (search_query.lower() not in x['title'].lower(), x['title']))
+    # Insert listings into the table
+    for listing in listings:
+        cursor.execute('''
+            INSERT INTO listings (title, price, location, url, image)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (listing['title'], listing['price'], listing['location'], listing['url'], listing['image']))
+
+    # Commit the transaction and close the connection
+    conn.commit()
+    conn.close()
     return listings
 
 def scrape_airbnb2(search_query=None, price=None, location=None):
