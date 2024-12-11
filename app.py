@@ -3,7 +3,7 @@
 # Bytecode version: 3.12.0rc2 (3531)
 # Source timestamp: 2024-12-10 00:40:21 UTC (1733791221)
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -14,7 +14,18 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 import base64
 import sqlite3
+import re
+
 app = Flask(__name__)
+
+def get_listings():
+    conn = sqlite3.connect('listings.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT title, price, location, url, image FROM listings")
+    listings = cursor.fetchall()
+    conn.close()
+    return listings
+
 
 @app.route('/', methods=['GET'])
 def index():
@@ -22,6 +33,19 @@ def index():
     listings = scrape_airbnb(search_query)
     #listings.extend(scrape_airbnb2(search_query))
     #listings.extend(scrape_airbnb3(search_query))
+    return render_template('index.html', listings=listings)
+
+@app.route('/api/listings')
+def api_listings():
+    listings = get_listings()
+    listings = [{'title': title, 'price': price, 'location': location, 'url': url, 'image': image} for title, price, location, url, image in listings]
+    return jsonify(listings)
+
+
+@app.route('/search', methods=['POST'])
+def search():
+    search_query = request.form.get('search', '')
+    listings = scrape_airbnb(search_query)
     return render_template('index.html', listings=listings)
 
 def scrape_airbnb(search_query=None, price=None, location=None):
@@ -115,11 +139,13 @@ def scrape_airbnb(search_query=None, price=None, location=None):
         listings.sort(key=lambda x: (search_query.lower() not in x['title'].lower(), x['title']))
     # Insert listings into the table
     for listing in listings:
-        cursor.execute('''
-            INSERT INTO listings (title, price, location, url, image)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (listing['title'], listing['price'], listing['location'], listing['url'], listing['image']))
-
+        cursor.execute('SELECT COUNT(*) FROM listings WHERE url = ?', (listing['url'],))
+        count = cursor.fetchone()[0]
+        if count == 0:
+            cursor.execute('''
+                INSERT INTO listings (title, price, location, url, image)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (listing['title'], listing['price'], listing['location'], listing['url'], listing['image']))
     # Commit the transaction and close the connection
     conn.commit()
     conn.close()
