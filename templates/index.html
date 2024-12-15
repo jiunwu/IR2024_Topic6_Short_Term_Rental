@@ -4,19 +4,116 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Short-Term Rentals - IR Project 6</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
+    <script src="../static/toggle.js" defer></script>
+    <style>
+
+        .advanced-container{
+            height: 200px;
+        }
+        #advanced-options {
+            display: none;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+        }
+        .filter-container {
+            margin: 10px 10px 0px 0px;
+        }
+
+    .toggle-label {
+        display: inline-block;
+        padding: 10px 20px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+        background-color: #007BFF;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: center;
+        user-select: none;
+        border: 10px;
+        border-radius: 10px;
+    }
+
+    .toggle-label:hover {
+        background-color: #007BFF;
+        transform: scale(1.05);
+    }
+
+    .toggle-label:active {
+        background-color: #007BFF;
+        transform: scale(0.95);
+    }
+
+    #advanced-options {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 10px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        background-color: #f9f9f9;
+        border-radius: 10px;
+
+        transition: opacity 1s ease, transform 1s ease;
+    }
+
+    #advanced-options.show {
+        display: flex;
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+        .filter-container {
+            margin: 10px;
+        }
+
+    </style>
 </head>
-<body>
+<body x-data="listingsApp()">
+    <div>
+        <h1>Short-Term Rentals</h1>
+        <!-- Search and Filter Form -->
+        <form method="get" action="/">
+            <div class="search-container">
+                <input id="search-input" type="text" name="search" placeholder="Search by title" 
+                       value="{{ request.args.get('search', '') }}">
+                <button type="submit" class="search-button">
+                    <i class="fa fa-search" aria-hidden="true"></i>
+                </button>
+            </div>
+            <label class="advanced-container">
+                <label class="toggle-label" onclick="toggleAdvancedOptions()">
+                Show Advanced Options
+            </label>
+            <!-- Advanced Options Section -->
+            <div id="advanced-options">
 
-    <h1>Short-Term Rentals</h1>
-    
-    <!-- Search and Filter Form -->
-    <form method="get" action="/">
-        <input type="text" name="search" placeholder="Search by title" value="{{ request.args.get('search', '') }}">
-        <button type="submit">Search</button>
-    </form>
 
-    <div class="bnb-grid">
+            <div class="filter-container">
+                <label for="filter">Filter:</label>
+                <select id="filter" name="filter">
+                    <option value="price">Price</option>
+                    <option value="max_guest">Max. Guest</option>
+                    <option value="name">Name</option>
+                </select>
+            <!-- Advanced Button -->
+        </div>
+        <div class="filter-container">
+            <button type="button" @click="clusterResults" class="advanced-button">Results Clustering</button>
+        </div>
+    </div>
+        </form>
+    </div>
+
+    <div class="bnb-grid" id="noGroup" x-show="!isClustered">
         {% for listing in listings %}
             <a href="{{ listing.url }}" class="bnb-card">
                 <div class="bnb-content">
@@ -31,5 +128,122 @@
         {% endfor %}
     </div>
 
+    <div id="results" x-show="isClustered">
+        <div class="bnb-grid" id="high-price">
+            <h1>High Price</h1>
+            <template x-for="listing in highPriceListings" :key="listing.url">
+                <a :href="listing.url" class="bnb-card">
+                    <div class="bnb-content">
+                        <img :src="listing.image" :alt="listing.title" class="bnb-image">
+                        <h2 x-text="listing.title"></h2>
+                        <p x-text="'Price: ' + listing.price"></p>
+                        <p x-text="'Location: ' + listing.location"></p>
+                    </div>
+                </a>
+            </template>
+        </div>
+        <div class="bnb-grid" id="middle-price">
+            <h1>Middle Price</h1>
+            <template x-for="listing in middlePriceListings" :key="listing.url">
+                <a :href="listing.url" class="bnb-card">
+                    <div class="bnb-content">
+                        <img :src="listing.image" :alt="listing.title" class="bnb-image">
+                        <h2 x-text="listing.title"></h2>
+                        <p x-text="'Price: ' + listing.price"></p>
+                        <p x-text="'Location: ' + listing.location"></p>
+                    </div>
+                </a>
+            </template>
+        </div>
+        <div class="bnb-grid" id="low-price">
+            <h1>Low Price</h1>
+            <template x-for="listing in lowPriceListings" :key="listing.url">
+                <a :href="listing.url" class="bnb-card">
+                    <div class="bnb-content">
+                        <img :src="listing.image" :alt="listing.title" class="bnb-image">
+                        <h2 x-text="listing.title"></h2>
+                        <p x-text="'Price: ' + listing.price"></p>
+                        <p x-text="'Location: ' + listing.location"></p>
+                    </div>
+                </a>
+            </template>
+        </div>
+    </form>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const toggleAdvanced = document.getElementById("toggle-advanced");
+            const advancedOptions = document.getElementById("advanced-options");
+
+            if (!toggleAdvanced || !advancedOptions) {
+                console.error("Toggle checkbox or advanced options div not found!");
+                return;
+            }
+
+            // Toggle visibility of the advanced options
+            toggleAdvanced.addEventListener("change", () => {
+                advancedOptions.style.display = toggleAdvanced.checked ? "flex" : "none";
+            });
+        });
+        function toggleAdvancedOptions() {
+        const advancedOptions = document.getElementById('advanced-options');
+        if (advancedOptions.classList.contains('show')) {
+            advancedOptions.classList.remove('show');
+            setTimeout(() => {
+                advancedOptions.style.display = 'none';
+            }); // Match the transition duration
+        } else {
+            advancedOptions.style.display = 'flex';
+            setTimeout(() => {
+                advancedOptions.classList.add('show');
+            });
+    }
+}
+
+        // Placeholder for clustering logic
+        function clusterResults() {
+            alert("Clustering results...");
+            // Add clustering logic here
+        function listingsApp() {
+            return {
+                isClustered: false,
+                highPriceListings: [],
+                middlePriceListings: [],
+                lowPriceListings: [],
+                extractNumericPrice(priceStr) {
+                    const match = priceStr.match(/[\d,]+(?:\.\d+)?/);
+                    return match ? parseFloat(match[0].replace(',', '')) : 0.0;
+                },
+                clusterResults() {
+                    fetch('/api/listings')
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('Fetched data:', data);
+                            const listings = data.map(listing => ({
+                                ...listing,
+                                numericPrice: this.extractNumericPrice(listing.price)
+                            }));
+
+                            console.log('Processed listings with numeric prices:', listings);
+
+                            listings.sort((a, b) => a.numericPrice - b.numericPrice);
+
+                            const n = listings.length;
+                            this.highPriceListings = listings.slice(Math.floor(2 * n / 3));
+                            this.middlePriceListings = listings.slice(Math.floor(n / 3), Math.floor(2 * n / 3));
+                            this.lowPriceListings = listings.slice(0, Math.floor(n / 3));
+
+                            console.log('High price listings:', this.highPriceListings);
+                            console.log('Middle price listings:', this.middlePriceListings);
+                            console.log('Low price listings:', this.lowPriceListings);
+
+                            this.isClustered = true;
+                        });
+                }
+            }
+        }
+    }
+    </script>
 </body>
 </html>
