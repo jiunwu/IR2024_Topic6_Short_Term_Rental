@@ -22,7 +22,13 @@ def get_listings():
 @app.route('/', methods=['GET'])
 def index():
     search_query = request.args.get('search', '')
-    listings = fetch_source3(search_query)
+    #fetch_source1(search_query)
+    fetch_source2(search_query)
+    fetch_source3(search_query)
+    
+    listings = get_listings()
+    listings = [{'title': title, 'price': price, 'location': location, 'url': url, 'image': image} for title, price, location, url, image in listings]
+
     return render_template('index.html', listings=listings)
 
 @app.route('/api/listings')
@@ -142,8 +148,6 @@ def fetch_source1(search_query=None, price=None, location=None):
     conn.commit()
     conn.close()
 
-    return listings
-
 def fetch_source2(search_query=None, price=None, location=None):
     url = 'https://www.cozycozy.com/gb/england-short-term-rentals'
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
@@ -217,10 +221,8 @@ def fetch_source2(search_query=None, price=None, location=None):
     conn.commit()
     conn.close()
 
-    return listings
-
 def fetch_source3(search_query=None, price=None, location=None):
-    url = 'https://www.example.com/source3'
+    url = 'https://www.countryhousecompany.co.uk/lettings/properties-available/'
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
@@ -247,22 +249,27 @@ def fetch_source3(search_query=None, price=None, location=None):
         )
     ''')
 
-    elements = soup.find_all('a', attrs={'data-param': True})
+    elements = soup.find_all('a', class_='flex flex-col min-h-full overflow-hidden bg-white rounded-lg shadow-lg hvr-float')
 
     # Overwrite the location values
-    locations = ["United Kingdom", "France", "Spain"]
+    locations = ["United Kingdom", "UK", "Britain"]
     location_index = 0
 
     for element in elements:
-        title = element.get_text(strip=True)
+        title_element = element.find('h4', class_='mb-4 font-sans text-xl font-semibold leading-tight text-blueGray-700')
+        price_element = element.find('p', class_='mb-4 font-sans text-lg font-normal leading-tight text-blueGray-600')
+        image_element = element.find('img', class_='absolute object-cover w-full h-full')
         url = element['href']
+
+        if not title_element or not price_element:
+            continue
+
+        title = title_element.get_text(strip=True)
+        price = price_element.get_text(strip=True)
+        image = image_element['src'] if image_element else "N/A"
         if url in seen:
             continue
         seen.add(url)
-
-        # Example of extracting other details (price, image, etc.)
-        price = "N/A"  # Replace with actual extraction logic
-        image = "N/A"  # Replace with actual extraction logic
 
         # Overwrite the location value
         location = locations[location_index % len(locations)]
@@ -286,8 +293,6 @@ def fetch_source3(search_query=None, price=None, location=None):
     # Commit the transaction and close the connection
     conn.commit()
     conn.close()
-
-    return listings
 
 if __name__ == '__main__':
     app.run(debug=True)
