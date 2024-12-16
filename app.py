@@ -1,9 +1,6 @@
-# Decompiled with PyLingual (https://pylingual.io)
-# Internal filename: /home/lino/OneDrive/IR project/IR2024/app.py
-# Bytecode version: 3.12.0rc2 (3531)
-# Source timestamp: 2024-12-10 00:40:21 UTC (1733791221)
+# USI - Information Retrieval, 2024, Lino and Jiun
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -14,7 +11,23 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 import base64
 import sqlite3
+import re
+import pyterrier as pt
+
 app = Flask(__name__)
+
+# Initialize PyTerrier
+if not pt.started():
+    pt.init()
+
+def get_listings():
+    conn = sqlite3.connect('listings.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT title, price, location, url, image FROM listings")
+    listings = cursor.fetchall()
+    conn.close()
+    return listings
+
 
 @app.route('/', methods=['GET'])
 def index():
@@ -22,6 +35,45 @@ def index():
     listings = scrape_airbnb(search_query)
     #listings.extend(scrape_airbnb2(search_query))
     #listings.extend(scrape_airbnb3(search_query))
+    return render_template('index.html', listings=listings)
+
+@app.route('/api/listings')
+def api_listings():
+    listings = get_listings()
+    listings = [{'title': title, 'price': price, 'location': location, 'url': url, 'image': image} for title, price, location, url, image in listings]
+    return jsonify(listings)
+
+
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    search_query = request.form.get('search', '')
+    
+    # Load dataset from SQLite
+    conn = sqlite3.connect('listings.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT rowid, title, price, location, url, image FROM listings")
+    rows = cursor.fetchall()
+    conn.close()
+
+    # Prepare the dataset for PyTerrier
+    docs = [{'docno': str(row[0]), 'text': f"{row[1]} {row[2]} {row[3]} {row[4]} {row[5]}"} for row in rows]
+    indexer = pt.IterDictIndexer('./index')
+    indexref = indexer.index(docs)
+
+    # Initialize the PyTerrier pipeline
+    pipeline = pt.BatchRetrieve(indexref, wmodel="BM25")
+
+    # Perform the search
+    results = pipeline.search(search_query)
+
+    # Fetch the results from the database
+    result_ids = [int(docno) for docno in results['docno']]
+    conn = sqlite3.connect('listings.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT title, price, location, url, image FROM listings WHERE rowid IN ({})".format(','.join('?' * len(result_ids))), result_ids)
+    listings = cursor.fetchall()
+    conn.close()
+
     return render_template('index.html', listings=listings)
 
 def scrape_airbnb(search_query=None, price=None, location=None):
@@ -62,6 +114,7 @@ def scrape_airbnb(search_query=None, price=None, location=None):
     elements = [el for el in elements if el.get_text(strip=True).lower() not in irrelevant_titles]
     elements = elements[2:] #workaround, remove Owners / Managers
 
+    
     for element in elements:
         title = element.get_text(strip=True)
         title_tag = element.find('div', class_='f6431b446c')  # Class that seems to hold the title.
@@ -115,11 +168,13 @@ def scrape_airbnb(search_query=None, price=None, location=None):
         listings.sort(key=lambda x: (search_query.lower() not in x['title'].lower(), x['title']))
     # Insert listings into the table
     for listing in listings:
-        cursor.execute('''
-            INSERT INTO listings (title, price, location, url, image)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (listing['title'], listing['price'], listing['location'], listing['url'], listing['image']))
-
+        cursor.execute('SELECT COUNT(*) FROM listings WHERE url = ?', (listing['url'],))
+        count = cursor.fetchone()[0]
+        if count == 0:
+            cursor.execute('''
+                INSERT INTO listings (title, price, location, url, image)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (listing['title'], listing['price'], listing['location'], listing['url'], listing['image']))
     # Commit the transaction and close the connection
     conn.commit()
     conn.close()

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Short-Term Rentals - IR Project 6</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div>
+        <h1>Short-Term Rentals</h1>
+        <!-- Search and Filter Form -->
+        <form method="get" action="/">
+            <input type="text" name="search" placeholder="Search by title" value="{{ request.args.get('search', '') }}">
+            <button type="submit">Search</button>
+            <div class="filter-container">
+                <label for="filter">Filter:</label>
+                <select id="filter" name="filter">
+                    <option value="price">Price</option>
+                    <option value="max_guest">Max. Guest</option>
+                    <option value="name">Name</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <div id="results">
+        <div class="bnb-grid" id="high-price">
+            <h2>High Price</h2>
+            {% for listing in high_price_listings %}
+                <a href="{{ listing.url }}" class="bnb-card">
+                    <div class="bnb-content">
+                        <img src="{{ listing.image }}" alt="{{ listing.title }}" class="bnb-image">
+                        <h2>{{ listing.title }}</h2>
+                        <p>Price: {{ listing.price }}</p>
+                        <p>Location: {{ listing.location }}</p>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+
+        <div class="bnb-grid" id="middle-price">
+            <h2>Middle Price</h2>
+            {% for listing in middle_price_listings %}
+                <a href="{{ listing.url }}" class="bnb-card">
+                    <div class="bnb-content">
+                        <img src="{{ listing.image }}" alt="{{ listing.title }}" class="bnb-image">
+                        <h2>{{ listing.title }}</h2>
+                        <p>Price: {{ listing.price }}</p>
+                        <p>Location: {{ listing.location }}</p>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+
+        <div class="bnb-grid" id="low-price">
+            <h2>Low Price</h2>
+            {% for listing in low_price_listings %}
+                <a href="{{ listing.url }}" class="bnb-card">
+                    <div class="bnb-content">
+                        <img src="{{ listing.image }}" alt="{{ listing.title }}" class="bnb-image">
+                        <h2>{{ listing.title }}</h2>
+                        <p>Price: {{ listing.price }}</p>
+                        <p>Location: {{ listing.location }}</p>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
