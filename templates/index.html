@@ -8,7 +8,6 @@
 
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
-    <script src="../static/toggle.js" defer></script>
 </head>
 <body x-data="listingsApp()">
     <div>
@@ -109,6 +108,17 @@
             const toggleAdvanced = document.getElementById("toggle-advanced");
             const advancedOptions = document.getElementById("advanced-options");
 
+
+
+        })
+        function toggleAdvancedOptions() {
+        const advancedOptions = document.getElementById('advanced-options');
+        if (advancedOptions.classList.contains('show')) {
+            advancedOptions.classList.remove('show');
+            setTimeout(() => {        document.addEventListener("DOMContentLoaded", () => {
+            const toggleAdvanced = document.getElementById("toggle-advanced");
+            const advancedOptions = document.getElementById("advanced-options");
+
             if (!toggleAdvanced || !advancedOptions) {
                 console.error("Toggle checkbox or advanced options div not found!");
                 return;
@@ -118,12 +128,7 @@
             toggleAdvanced.addEventListener("change", () => {
                 advancedOptions.style.display = toggleAdvanced.checked ? "flex" : "none";
             });
-        });
-        function toggleAdvancedOptions() {
-        const advancedOptions = document.getElementById('advanced-options');
-        if (advancedOptions.classList.contains('show')) {
-            advancedOptions.classList.remove('show');
-            setTimeout(() => {
+        })
                 advancedOptions.style.display = 'none';
             }); // Match the transition duration
         } else {

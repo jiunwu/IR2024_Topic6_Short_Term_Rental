@@ -3,7 +3,7 @@
 }
 
 #advanced-options {
-    display: none;
+    display: flex;
     flex-direction: column;
     align-items: center;
     margin-top: 10px;
@@ -12,13 +12,15 @@
     border: 1px solid #ccc;
     background-color: #f9f9f9;
     border-radius: 10px;
-    transition: opacity 1s ease, transform 1s ease;
+
+    top: -1000px;
+    position:relative;
 }
 
 #advanced-options.show {
-    display: flex;
-    opacity: 1;
     transform: translateY(0);
+
+    top:15px;
 }
 
 body {
@@ -49,7 +51,7 @@ form input, form select, form button {
 }
 
 .filter-container {
-    margin: 10px 10px 0px 0px;
+    margin: 10px 10px 10px 10px;
 }
 
 .bnb-grid {
@@ -96,7 +98,7 @@ form input, form select, form button {
     color: #555;
 }
 
-.toggle-label {
+.toggle-label, .advanced-button {
     display: inline-block;
     padding: 10px 20px;
     font-size: 1rem;
