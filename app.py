@@ -1,7 +1,4 @@
-# Decompiled with PyLingual (https://pylingual.io)
-# Internal filename: /home/lino/OneDrive/IR project/IR2024/app.py
-# Bytecode version: 3.12.0rc2 (3531)
-# Source timestamp: 2024-12-10 00:40:21 UTC (1733791221)
+# USI - Information Retrieval, 2024, Lino and Jiun
 
 from flask import Flask, render_template, request, jsonify
 import requests
@@ -117,6 +114,7 @@ def scrape_airbnb(search_query=None, price=None, location=None):
     elements = [el for el in elements if el.get_text(strip=True).lower() not in irrelevant_titles]
     elements = elements[2:] #workaround, remove Owners / Managers
 
+    
     for element in elements:
         title = element.get_text(strip=True)
         title_tag = element.find('div', class_='f6431b446c')  # Class that seems to hold the title.
