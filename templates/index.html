@@ -27,8 +27,6 @@
             </label>
             <!-- Advanced Options Section -->
             <div id="advanced-options">
-
-
             <div class="filter-container">
                 <label for="filter">Filter:</label>
                 <select id="filter" name="filter">
@@ -104,48 +102,14 @@
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const toggleAdvanced = document.getElementById("toggle-advanced");
-            const advancedOptions = document.getElementById("advanced-options");
-
-
-
-        })
-        function toggleAdvancedOptions() {
-        const advancedOptions = document.getElementById('advanced-options');
-        if (advancedOptions.classList.contains('show')) {
-            advancedOptions.classList.remove('show');
-            setTimeout(() => {        document.addEventListener("DOMContentLoaded", () => {
-            const toggleAdvanced = document.getElementById("toggle-advanced");
-            const advancedOptions = document.getElementById("advanced-options");
-
-            if (!toggleAdvanced || !advancedOptions) {
-                console.error("Toggle checkbox or advanced options div not found!");
-                return;
-            }
-
-            // Toggle visibility of the advanced options
-            toggleAdvanced.addEventListener("change", () => {
-                advancedOptions.style.display = toggleAdvanced.checked ? "flex" : "none";
-            });
-        })
-                advancedOptions.style.display = 'none';
-            }); // Match the transition duration
-        } else {
-            advancedOptions.style.display = 'flex';
-            setTimeout(() => {
-                advancedOptions.classList.add('show');
-            });
-    }
-}
-
-        // Placeholder for clustering logic
-        function clusterResults() {
-            alert("Clustering results...");
-            // Add clustering logic here
         function listingsApp() {
             return {
+                searchQuery: '',
+                filter: 'price',
                 isClustered: false,
+                showAdvancedOptions: false,
+                listings: [],
+                filteredListings: [],
                 highPriceListings: [],
                 middlePriceListings: [],
                 lowPriceListings: [],
@@ -153,35 +117,38 @@
                     const match = priceStr.match(/[\d,]+(?:\.\d+)?/);
                     return match ? parseFloat(match[0].replace(',', '')) : 0.0;
                 },
-                clusterResults() {
+                fetchListings() {
                     fetch('/api/listings')
                         .then(response => response.json())
                         .then(data => {
-                            console.log('Fetched data:', data);
-                            const listings = data.map(listing => ({
-                                ...listing,
-                                numericPrice: this.extractNumericPrice(listing.price)
-                            }));
-
-                            console.log('Processed listings with numeric prices:', listings);
-
-                            listings.sort((a, b) => a.numericPrice - b.numericPrice);
-
-                            const n = listings.length;
-                            this.highPriceListings = listings.slice(Math.floor(2 * n / 3));
-                            this.middlePriceListings = listings.slice(Math.floor(n / 3), Math.floor(2 * n / 3));
-                            this.lowPriceListings = listings.slice(0, Math.floor(n / 3));
-
-                            console.log('High price listings:', this.highPriceListings);
-                            console.log('Middle price listings:', this.middlePriceListings);
-                            console.log('Low price listings:', this.lowPriceListings);
-
-                            this.isClustered = true;
+                            this.listings = data;
+                            this.filteredListings = data;
                         });
+                },
+                searchListings() {
+                    this.filteredListings = this.listings.filter(listing => 
+                        listing.title.toLowerCase().includes(this.searchQuery.toLowerCase())
+                    );
+                },
+                clusterResults() {
+                    this.isClustered = true;
+                    const listings = this.filteredListings.map(listing => ({
+                        ...listing,
+                        numericPrice: this.extractNumericPrice(listing.price)
+                    }));
+
+                    listings.sort((a, b) => a.numericPrice - b.numericPrice);
+
+                    const n = listings.length;
+                    this.highPriceListings = listings.slice(Math.floor(2 * n / 3));
+                    this.middlePriceListings = listings.slice(Math.floor(n / 3), Math.floor(2 * n / 3));
+                    this.lowPriceListings = listings.slice(0, Math.floor(n / 3));
+                },
+                init() {
+                    this.fetchListings();
                 }
             }
         }
-    }
     </script>
 </body>
 </html>
