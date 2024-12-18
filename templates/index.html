@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Short-Term Rentals - IR Project 6</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
 </head>
@@ -12,8 +14,19 @@
         <h1>Short-Term Rentals</h1>
         <!-- Search and Filter Form -->
         <form method="get" action="/">
-            <input type="text" name="search" placeholder="Search by title" value="{{ request.args.get('search', '') }}">
-            <button type="submit">Search</button>
+            <div class="search-container">
+                <input id="search-input" type="text" name="search" placeholder="Search by title" 
+                       value="{{ request.args.get('search', '') }}">
+                <button type="submit" class="search-button">
+                    <i class="fa fa-search" aria-hidden="true"></i>
+                </button>
+            </div>
+            <label class="advanced-container">
+                <label class="toggle-label" onclick="toggleAdvancedOptions()">
+                Show Advanced Options
+            </label>
+            <!-- Advanced Options Section -->
+            <div id="advanced-options">
             <div class="filter-container">
                 <label for="filter">Filter:</label>
                 <select id="filter" name="filter">
@@ -21,8 +34,12 @@
                     <option value="max_guest">Max. Guest</option>
                     <option value="name">Name</option>
                 </select>
-            </div>
-            <button type="button" @click="clusterResults">Results Clustering</button>
+            <!-- Advanced Button -->
+        </div>
+        <div class="filter-container">
+            <button type="button" @click="clusterResults" class="advanced-button">Results Clustering</button>
+        </div>
+    </div>
         </form>
     </div>
 
@@ -81,12 +98,18 @@
                 </a>
             </template>
         </div>
+    </form>
     </div>
 
     <script>
         function listingsApp() {
             return {
+                searchQuery: '',
+                filter: 'price',
                 isClustered: false,
+                showAdvancedOptions: false,
+                listings: [],
+                filteredListings: [],
                 highPriceListings: [],
                 middlePriceListings: [],
                 lowPriceListings: [],
@@ -94,31 +117,35 @@
                     const match = priceStr.match(/[\d,]+(?:\.\d+)?/);
                     return match ? parseFloat(match[0].replace(',', '')) : 0.0;
                 },
-                clusterResults() {
+                fetchListings() {
                     fetch('/api/listings')
                         .then(response => response.json())
                         .then(data => {
-                            console.log('Fetched data:', data);
-                            const listings = data.map(listing => ({
-                                ...listing,
-                                numericPrice: this.extractNumericPrice(listing.price)
-                            }));
-
-                            console.log('Processed listings with numeric prices:', listings);
-
-                            listings.sort((a, b) => a.numericPrice - b.numericPrice);
-
-                            const n = listings.length;
-                            this.highPriceListings = listings.slice(Math.floor(2 * n / 3));
-                            this.middlePriceListings = listings.slice(Math.floor(n / 3), Math.floor(2 * n / 3));
-                            this.lowPriceListings = listings.slice(0, Math.floor(n / 3));
-
-                            console.log('High price listings:', this.highPriceListings);
-                            console.log('Middle price listings:', this.middlePriceListings);
-                            console.log('Low price listings:', this.lowPriceListings);
-
-                            this.isClustered = true;
+                            this.listings = data;
+                            this.filteredListings = data;
                         });
+                },
+                searchListings() {
+                    this.filteredListings = this.listings.filter(listing => 
+                        listing.title.toLowerCase().includes(this.searchQuery.toLowerCase())
+                    );
+                },
+                clusterResults() {
+                    this.isClustered = true;
+                    const listings = this.filteredListings.map(listing => ({
+                        ...listing,
+                        numericPrice: this.extractNumericPrice(listing.price)
+                    }));
+
+                    listings.sort((a, b) => a.numericPrice - b.numericPrice);
+
+                    const n = listings.length;
+                    this.highPriceListings = listings.slice(Math.floor(2 * n / 3));
+                    this.middlePriceListings = listings.slice(Math.floor(n / 3), Math.floor(2 * n / 3));
+                    this.lowPriceListings = listings.slice(0, Math.floor(n / 3));
+                },
+                init() {
+                    this.fetchListings();
                 }
             }
         }

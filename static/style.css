@@ -1,3 +1,28 @@
+.advanced-container{
+    height: 200px;
+}
+
+#advanced-options {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+
+    top: -1000px;
+    position:relative;
+}
+
+#advanced-options.show {
+    transform: translateY(0);
+
+    top:15px;
+}
+
 body {
     font-family: Arial, sans-serif;
     line-height: 1.6;
@@ -15,6 +40,9 @@ form {
     justify-content: center;
     gap: 10px;
     margin: 20px;
+    flex-direction: column;
+    align-content: center;
+    align-items: center;
 }
 
 form input, form select, form button {
@@ -22,33 +50,8 @@ form input, form select, form button {
     font-size: 16px;
 }
 
-.hidden {
-    display: none;
-}
-
-/* Filter dropdown styles */
 .filter-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-}
-
-label {
-    font-weight: bold;
-}
-
-select {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: white;
-    cursor: pointer;
-}
-
-select:focus {
-    outline: none;
-    border-color: #007bff;
+    margin: 10px 10px 10px 10px;
 }
 
 .bnb-grid {
@@ -93,4 +96,29 @@ select:focus {
 .bnb-card p {
     margin: 5px 0;
     color: #555;
+}
+
+.toggle-label, .advanced-button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: #007BFF;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    user-select: none;
+    border: 10px;
+    border-radius: 10px;
+}
+
+.toggle-label:hover {
+    background-color: #007BFF;
+    transform: scale(1.05);
+}
+
+.toggle-label:active {
+    background-color: #007BFF;
+    transform: scale(0.95);
 }
