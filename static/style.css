@@ -1,13 +1,81 @@
-body {
+.advanced-container{
+    height: 200px;
+}
+
+#advanced-options.show {
+    transform: translateY(0);
+
+    top:15px;
+}
+#container > form > input[type=text]{
+    border-radius: 10px;
+    border-color: #8fc2e0;
+    background-color: #b4e4ff;
+}
+#container > form > input[type=text]:focus{
+    background-color: #c2e6fc;
+}
+
+ body {
     font-family: Arial, sans-serif;
     line-height: 1.6;
     margin: 0;
     padding: 0;
+    background-position: top center;
+    position: relative; 
 }
 
-h1 {
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%; 
+    height: 100%;
+    background-image: url('https://wallpapercave.com/wp/wp10493325.jpg');
+    background-repeat: no-repeat;
+    background-size: cover; 
+    z-index: -1;
+
+}
+
+#subtitle{
+    font-size: 40px;
+}
+h1, #subtitle{
+    outline-width: 3px;
+
+    color:#b4e4ff;
+    font-weight: bold;
+
+    text-shadow: 
+        -2px -2px 0 #215c9c,
+         2px -2px 0 #215c9c,
+        -2px  2px 0 #215c9c, 
+         2px  2px 0 #215c9c; 
+}
+
+#container > form > div > label{
+    font-size:20px;
+}
+
+.title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    margin: 0; 
+    height: 150vh; 
+    background-color: #ffffff00; 
+    color: white; 
+    font-size: 80px; 
+    font-weight: bold;
+    position: sticky; 
+    top: 0; 
+    z-index: 1000;
+    transition: height 0.3s ease, font-size 0.3s ease; 
+
     text-align: center;
-    margin-top: 20px;
 }
 
 form {
@@ -15,23 +83,44 @@ form {
     justify-content: center;
     gap: 10px;
     margin: 20px;
+    flex-direction: column;
+    align-content: center;
+    align-items: center;
 }
 
 form input, form select, form button {
     padding: 10px;
     font-size: 16px;
+    margin: 30p;
 }
 
 .hidden {
     display: none;
 }
 
-/* Filter dropdown styles */
-.filter-container {
+h2{
+    margin-top: 30%;
+}
+
+.filter-container, .range-inputs {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 10px;
+    margin: 10px 10px 10px 10px;
+
+    position: relative;
+    top: -10000px;
+    height: 0px;
+}
+
+.move-button {
+    margin-top: 60px;
+}
+
+.filter-container.show, .range-inputs.show {
+    top: auto;
+    height: auto;
 }
 
 label {
@@ -40,7 +129,7 @@ label {
 
 select {
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 4px solid #8fc2e0;
     border-radius: 4px;
     background-color: white;
     cursor: pointer;
@@ -48,7 +137,7 @@ select {
 
 select:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: #8fc2e0;
 }
 
 .bnb-grid {
@@ -58,13 +147,17 @@ select:focus {
     padding: 20px;
 }
 
+img{
+    border-radius: 4px;
+}
+
 .bnb-card {
-    border: 1px solid #ccc;
+    border: 4px solid #8fc2e0;
     border-radius: 10px;
-    padding: 0;
+    padding: 3px;
     text-align: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    background-color: #f9f9f9;
+    background-color: rgb(212 231 249);
     transition: transform 0.2s, box-shadow 0.2s;
     text-decoration: none;
     color: inherit;
@@ -93,4 +186,79 @@ select:focus {
 .bnb-card p {
     margin: 5px 0;
     color: #555;
+}
+
+#filter{
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    background-color: #b4e4ff;
+    border-radius: 10px;
+    text-align: center;
+    user-select: none;
+    min-width:180px;
+}
+
+#filter:focus{
+    background-color: rgb(119, 179, 235);;
+}
+
+#container, .bnb-grid {
+    background-color: rgb(71 148 215 / 45%);
+    border: 4px solid #8fc2e0;
+    border-radius: 10px;
+    max-height: 100%;
+    max-width: 80vw;
+    margin: 5px auto;
+    text-align: center;
+    width: fit-content;
+}
+
+#container{
+    margin-bottom:40px;
+}
+
+body > div:nth-child(1) > form > input[type=text], #low, #medium, #high {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    background-color: #b4e4ff;
+    border-radius: 10px;
+    text-align: center;
+    user-select: none;
+    min-width:180px;
+    margin:5 px;
+}
+
+body > div:nth-child(1) > form > input[type=text]:focus{
+    background-color: rgb(119, 179, 235);
+    color:#505050;
+}
+.toggle-label, .advanced-button, .search-button, .move-button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: #215c9c;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: center;
+    user-select: none;
+    border: 4px solid #007BFF;;
+    border-radius: 10px;
+    min-width:180px;
+    margin: 30px;
+}
+
+.toggle-label:hover {
+    background-color: #007BFF;
+    transform: scale(1.05);
+}
+
+.toggle-label:active {
+    background-color: #007BFF;
+    transform: scale(0.95);
 }
