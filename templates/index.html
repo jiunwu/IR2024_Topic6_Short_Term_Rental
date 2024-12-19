@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Short-Term Rentals - IR Project 6</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
@@ -101,12 +103,18 @@
                 </a>
             </template>
         </div>
+    </form>
     </div>
 
     <script>
         function listingsApp() {
             return {
+                searchQuery: '',
+                filter: 'price',
                 isClustered: false,
+                showAdvancedOptions: false,
+                listings: [],
+                filteredListings: [],
                 highPriceListings: [],
                 middlePriceListings: [],
                 lowPriceListings: [],
@@ -114,7 +122,7 @@
                     const match = priceStr.match(/[\d,]+(?:\.\d+)?/);
                     return match ? parseFloat(match[0].replace(',', '')) : 0.0;
                 },
-                clusterResults() {
+                fetchListings() {
                     fetch('/api/listings')
                         .then(response => response.json())
                         .then(data => {
@@ -146,9 +154,13 @@
                             if (!lowValue) {
                                 this.lowPriceListings = listings.slice(0, Math.floor(n / 3));
                             }
-
-                            this.isClustered = true;
-                        });
+                    const n = listings.length;
+                    this.highPriceListings = listings.slice(Math.floor(2 * n / 3));
+                    this.middlePriceListings = listings.slice(Math.floor(n / 3), Math.floor(2 * n / 3));
+                    this.lowPriceListings = listings.slice(0, Math.floor(n / 3));
+                },
+                init() {
+                    this.fetchListings();
                 }
             }
         }
