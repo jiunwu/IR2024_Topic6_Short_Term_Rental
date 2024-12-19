@@ -5,15 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Short-Term Rentals - IR Project 6</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
-
 </head>
-<body x-data="listingsApp()">
+<body x-data="listingsApp()" x-init="init()">
     <div>
-        <h1 class="title">AIR-bnb</h1>
+        <h1 class="title">Short-Term Rentals</h1>
     </div>
 
     <!-- Search and Filter Form -->
@@ -23,7 +21,7 @@
             <button class="search-button" type="submit"><i class="fas fa-search"></i> Search</button>
             
             <!-- Button to show the form -->
-            <button class="move-button" type="button" onclick="showForm()">Advance options</button>
+            <button class="move-button" type="button" @click="showForm">Advance options</button>
             <div class="filter-container">
                 <label for="filter">Filter:</label>
                 <select id="filter" name="filter">
@@ -49,23 +47,21 @@
     </section>
 
     <div class="bnb-grid" id="noGroup" x-show="!isClustered">
-        {% for listing in listings %}
-            <a href="{{ listing.url }}" class="bnb-card">
+        <template x-for="listing in paginatedListings" :key="listing.url">
+            <a :href="listing.url" class="bnb-card">
                 <div class="bnb-content">
-                    <img src="{{ listing.image }}" alt="{{ listing.title }}" class="bnb-image">
-                    <h2>{{ listing.title }}</h2>
-                    <p>Price: {{ listing.price }}</p>
-                    <p>Location: {{ listing.location }}</p>
+                    <img :src="listing.image" :alt="listing.title" class="bnb-image">
+                    <h2 x-text="listing.title"></h2>
+                    <p x-text="'Price: ' + listing.price"></p>
+                    <p x-text="'Location: ' + listing.location"></p>
                 </div>
             </a>
-        {% else %}
-            <p>No results found for "{{ search_query }}"</p>
-        {% endfor %}
+        </template>
     </div>
 
     <div id="results" x-show="isClustered">
         <div class="bnb-grid" id="high-price">
-            <h1>High Price</h1>
+            <h2>High Price</h2>
             <template x-for="listing in highPriceListings" :key="listing.url">
                 <a :href="listing.url" class="bnb-card">
                     <div class="bnb-content">
@@ -78,7 +74,7 @@
             </template>
         </div>
         <div class="bnb-grid" id="middle-price">
-            <h2 id="subtitle">Middle Price</h2>
+            <h2>Middle Price</h2>
             <template x-for="listing in middlePriceListings" :key="listing.url">
                 <a :href="listing.url" class="bnb-card">
                     <div class="bnb-content">
@@ -91,7 +87,7 @@
             </template>
         </div>
         <div class="bnb-grid" id="low-price">
-            <h2 id="subtitle">Low Price</h2>
+            <h2>Low Price</h2>
             <template x-for="listing in lowPriceListings" :key="listing.url">
                 <a :href="listing.url" class="bnb-card">
                     <div class="bnb-content">
@@ -103,7 +99,13 @@
                 </a>
             </template>
         </div>
-    </form>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination" x-show="!isClustered">
+        <button @click="prevPage" :disabled="currentPage === 1">Previous</button>
+        <span>Page <span x-text="currentPage"></span> of <span x-text="totalPages"></span></span>
+        <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
     </div>
 
     <script>
@@ -118,6 +120,16 @@
                 highPriceListings: [],
                 middlePriceListings: [],
                 lowPriceListings: [],
+                currentPage: 1,
+                itemsPerPage: 60,
+                get paginatedListings() {
+                    const start = (this.currentPage - 1) * this.itemsPerPage;
+                    const end = start + this.itemsPerPage;
+                    return this.filteredListings.slice(start, end);
+                },
+                get totalPages() {
+                    return Math.ceil(this.filteredListings.length / this.itemsPerPage);
+                },
                 extractNumericPrice(priceStr) {
                     const match = priceStr.match(/[\d,]+(?:\.\d+)?/);
                     return match ? parseFloat(match[0].replace(',', '')) : 0.0;
@@ -127,50 +139,51 @@
                         .then(response => response.json())
                         .then(data => {
                             console.log('Fetched data:', data);
-                            const listings = data.map(listing => ({
-                                ...listing,
-                                numericPrice: this.extractNumericPrice(listing.price)
-                            }));
+                            this.listings = data;
+                            this.filteredListings = data;
+                        });
+                },
+                searchListings() {
+                    this.filteredListings = this.listings.filter(listing => 
+                        listing.title.toLowerCase().includes(this.searchQuery.toLowerCase())
+                    );
+                    this.currentPage = 1; // Reset to first page after search
+                },
+                clusterResults() {
+                    this.isClustered = true;
+                    const listings = this.filteredListings.map(listing => ({
+                        ...listing,
+                        numericPrice: this.extractNumericPrice(listing.price)
+                    }));
 
-                            console.log('Processed listings with numeric prices:', listings);
+                    listings.sort((a, b) => a.numericPrice - b.numericPrice);
 
-                            listings.sort((a, b) => a.numericPrice - b.numericPrice);
-
-                            const n = listings.length;
-                            
-                            const lowValue = document.getElementById("low").value;
-                            const mediumValue = document.getElementById("medium").value;
-                            const highValue = document.getElementById("high").value;
-
-                            // Check if the input fields are not null or empty before updating the values
-                            if (!highValue) {
-                                this.highPriceListings = listings.slice(Math.floor(2 * n / 3));
-                            } 
-
-                            if (!mediumValue) {
-                                this.middlePriceListings = listings.slice(Math.floor(n / 3), Math.floor(2 * n / 3));
-                            } 
-
-                            if (!lowValue) {
-                                this.lowPriceListings = listings.slice(0, Math.floor(n / 3));
-                            }
                     const n = listings.length;
-                    this.highPriceListings = listings.slice(Math.floor(2 * n / 3));
-                    this.middlePriceListings = listings.slice(Math.floor(n / 3), Math.floor(2 * n / 3));
-                    this.lowPriceListings = listings.slice(0, Math.floor(n / 3));
+                    this.highPriceListings = listings.slice(Math.floor(2 * n / 3), Math.floor(2 * n / 3) + 20);
+                    this.middlePriceListings = listings.slice(Math.floor(n / 3), Math.floor(n / 3) + 20);
+                    this.lowPriceListings = listings.slice(0, 20);
+                },
+                showForm() {
+                    const form = document.querySelector('.filter-container');
+                    const range = document.querySelector('.range-inputs');
+                    form.classList.toggle('show');
+                    range.classList.toggle('show');
+                },
+                prevPage() {
+                    if (this.currentPage > 1) {
+                        this.currentPage--;
+                    }
+                },
+                nextPage() {
+                    if (this.currentPage < this.totalPages) {
+                        this.currentPage++;
+                    }
                 },
                 init() {
                     this.fetchListings();
                 }
             }
         }
-
-    function showForm() {
-        const form = document.querySelector('.filter-container');
-        const range = document.querySelector('.range-inputs');
-        form.classList.toggle('show');
-        range.classList.toggle('show');
-    }
     </script>
 </body>
 </html>
