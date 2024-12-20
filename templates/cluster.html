@@ -26,7 +26,7 @@
 
     <div id="results">
         <div class="bnb-grid" id="high-price">
-            <h2>High Price</h2>
+            <h2>High Value</h2>
             {% for listing in high_price_listings %}
                 <a href="{{ listing.url }}" class="bnb-card">
                     <div class="bnb-content">
@@ -40,7 +40,7 @@
         </div>
 
         <div class="bnb-grid" id="middle-price">
-            <h2>Middle Price</h2>
+            <h2>Middle value</h2>
             {% for listing in middle_price_listings %}
                 <a href="{{ listing.url }}" class="bnb-card">
                     <div class="bnb-content">
@@ -53,7 +53,7 @@
             {% endfor %}
         </div>
 
-        <div class="bnb-grid" id="low-price">
+        <div class="bnb-grid" id="low-value">
             <h2>Low Price</h2>
             {% for listing in low_price_listings %}
                 <a href="{{ listing.url }}" class="bnb-card">

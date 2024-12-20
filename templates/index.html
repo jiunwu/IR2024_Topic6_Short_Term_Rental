@@ -31,18 +31,6 @@
                 </select>
                 <button class="advanced-button" type="button" @click="clusterResults">Results Clustering</button>
             </div>
-    
-            <!-- Low, Medium, and High Value Inputs -->
-            <div class="range-inputs">
-                <label for="low">Low:</label>
-                <input type="number" id="low" name="low" placeholder="Low value" min="0">
-    
-                <label for="medium">Medium:</label>
-                <input type="number" id="medium" name="medium" placeholder="Medium value" min="0">
-    
-                <label for="high">High:</label>
-                <input type="number" id="high" name="high" placeholder="High value" min="0">
-            </div>
         </form>
     </section>
 
@@ -61,7 +49,7 @@
 
     <div id="results" x-show="isClustered">
         <div class="bnb-grid" id="high-price">
-            <h2>High Price</h2>
+            <h2>High Value</h2>
             <template x-for="listing in highPriceListings" :key="listing.url">
                 <a :href="listing.url" class="bnb-card">
                     <div class="bnb-content">
@@ -74,7 +62,7 @@
             </template>
         </div>
         <div class="bnb-grid" id="middle-price">
-            <h2>Middle Price</h2>
+            <h2>Middle Value</h2>
             <template x-for="listing in middlePriceListings" :key="listing.url">
                 <a :href="listing.url" class="bnb-card">
                     <div class="bnb-content">
@@ -87,7 +75,7 @@
             </template>
         </div>
         <div class="bnb-grid" id="low-price">
-            <h2>Low Price</h2>
+            <h2>Low Value</h2>
             <template x-for="listing in lowPriceListings" :key="listing.url">
                 <a :href="listing.url" class="bnb-card">
                     <div class="bnb-content">
@@ -103,9 +91,9 @@
 
     <!-- Pagination Controls -->
     <div class="pagination" x-show="!isClustered">
-        <button @click="prevPage" :disabled="currentPage === 1">Previous</button>
+        <button class = "move-button" @click="prevPage" :disabled="currentPage === 1">Previous</button>
         <span>Page <span x-text="currentPage"></span> of <span x-text="totalPages"></span></span>
-        <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
+        <button class = "move-button" @click="nextPage" :disabled="currentPage === totalPages">Next</button>
     </div>
 
     <script>
@@ -127,6 +115,22 @@
                     const end = start + this.itemsPerPage;
                     return this.filteredListings.slice(start, end);
                 },
+                initializeListings(data) {
+                    this.listings = data.filter(listing => 
+                        listing.price !== null &&
+                        listing.price !== '' &&
+                        listing.location !== null &&
+                        listing.location !== '' &&
+                        !this.isUnwantedTitle(listing.title)
+                    );
+                    
+                    this.filteredListings = this.listings;
+                },
+                isUnwantedTitle(title) {
+                if (!title) return true;
+                const unwantedTitles = ['Careers', 'careers', 'Termsand Conditions', 'termsand conditions'];
+                return unwantedTitles.some(unwanted => title.toLowerCase().includes(unwanted.toLowerCase()));
+            },
                 get totalPages() {
                     return Math.ceil(this.filteredListings.length / this.itemsPerPage);
                 },
@@ -150,18 +154,24 @@
                     this.currentPage = 1; // Reset to first page after search
                 },
                 clusterResults() {
-                    this.isClustered = true;
-                    const listings = this.filteredListings.map(listing => ({
-                        ...listing,
-                        numericPrice: this.extractNumericPrice(listing.price)
-                    }));
+                this.isClustered = true;
+                const validListings = this.filteredListings.filter(listing => 
+                    listing.price !== null &&
+                    listing.price !== '' &&
+                    listing.location !== null &&
+                    listing.location !== '' &&
+                    !this.isUnwantedTitle(listing.title)
+                );
+                const listings = validListings.map(listing => ({
+                    ...listing,
+                    numericPrice: this.extractNumericPrice(listing.price)
+                }));
+                listings.sort((a, b) => a.numericPrice - b.numericPrice);
 
-                    listings.sort((a, b) => a.numericPrice - b.numericPrice);
-
-                    const n = listings.length;
-                    this.highPriceListings = listings.slice(Math.floor(2 * n / 3), Math.floor(2 * n / 3) + 20);
-                    this.middlePriceListings = listings.slice(Math.floor(n / 3), Math.floor(n / 3) + 20);
-                    this.lowPriceListings = listings.slice(0, 20);
+                const n = listings.length;
+                this.highPriceListings = listings.slice(Math.floor(2 * n / 3), Math.floor(2 * n / 3) + 20);
+                this.middlePriceListings = listings.slice(Math.floor(n / 3), Math.floor(n / 3) + 20);
+                this.lowPriceListings = listings.slice(0, 20);
                 },
                 showForm() {
                     const form = document.querySelector('.filter-container');
@@ -172,11 +182,19 @@
                 prevPage() {
                     if (this.currentPage > 1) {
                         this.currentPage--;
+                        this.scrollToGrid(); // Scroll to the grid
                     }
                 },
                 nextPage() {
                     if (this.currentPage < this.totalPages) {
                         this.currentPage++;
+                        this.scrollToGrid(); // Scroll to the grid
+                    }
+                },
+                scrollToGrid() {
+                    const gridElement = document.querySelector('#noGroup');
+                    if (gridElement) {
+                        gridElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
                 },
                 init() {

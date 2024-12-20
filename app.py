@@ -44,7 +44,16 @@ def search():
     # Load dataset from SQLite
     conn = sqlite3.connect('listings.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT rowid, title, price, location, url, image FROM listings")
+    cursor.execute("""
+        SELECT rowid, title, price, location, url, image
+        FROM listings
+        WHERE title NOT LIKE '%Careers%'
+          AND title NOT LIKE '%Terms and Conditions%'
+          AND price IS NOT NULL
+          AND price != ''
+          AND location IS NOT NULL
+          AND location != ''
+    """)
     rows = cursor.fetchall()
     conn.close()
 
